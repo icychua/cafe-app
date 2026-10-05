@@ -72,6 +72,12 @@
       font-size: 24px;
       font-weight: bold;
     }
+
+    #status {
+      text-align: center;
+      color: #666;
+      margin: 16px 0;
+    }
   </style>
 </head>
 
@@ -80,41 +86,8 @@
   <div class="calculator">
     <h1>Café Bill Calculator</h1>
 
-    <div class="item">
-      <span>Chicken Rice</span>
-      <span class="price">$4.50</span>
-      <input type="number" min="0" value="0" data-price="4.50">
-    </div>
-
-    <div class="item">
-      <span>Nasi Lemak</span>
-      <span class="price">$4.00</span>
-      <input type="number" min="0" value="0" data-price="4.00">
-    </div>
-
-    <div class="item">
-      <span>Laksa</span>
-      <span class="price">$5.00</span>
-      <input type="number" min="0" value="0" data-price="5.00">
-    </div>
-
-    <div class="item">
-      <span>Kopi</span>
-      <span class="price">$1.50</span>
-      <input type="number" min="0" value="0" data-price="1.50">
-    </div>
-
-    <div class="item">
-      <span>Teh</span>
-      <span class="price">$1.30</span>
-      <input type="number" min="0" value="0" data-price="1.30">
-    </div>
-
-    <div class="item">
-      <span>Milo</span>
-      <span class="price">$2.00</span>
-      <input type="number" min="0" value="0" data-price="2.00">
-    </div>
+    <div id="status">Loading menu...</div>
+    <div id="menu"></div>
 
     <button onclick="calculateBill()">Calculate Bill</button>
 
@@ -122,6 +95,55 @@
   </div>
 
   <script>
+    async function loadMenu() {
+      try {
+        const response = await fetch('menu.csv');
+
+        if (!response.ok) {
+          throw new Error('Could not load menu.csv');
+        }
+
+        const csvText = await response.text();
+        const lines = csvText.trim().split(/\r?\n/);
+
+        const menuContainer = document.getElementById('menu');
+        const status = document.getElementById('status');
+
+        menuContainer.innerHTML = '';
+
+        lines.forEach(line => {
+          const [name, price] = line.split(',');
+
+          if (!name || !price) {
+            return;
+          }
+
+          const item = document.createElement('div');
+          item.className = 'item';
+
+          item.innerHTML = `
+            <span>${name.trim()}</span>
+            <span class="price">$${parseFloat(price).toFixed(2)}</span>
+            <input
+              type="number"
+              min="0"
+              value="0"
+              data-price="${parseFloat(price)}"
+            >
+          `;
+
+          menuContainer.appendChild(item);
+        });
+
+        status.style.display = 'none';
+
+      } catch (error) {
+        document.getElementById('status').textContent =
+          'Unable to load the menu. Please check that menu.csv is in the same folder.';
+        console.error(error);
+      }
+    }
+
     function calculateBill() {
       const inputs = document.querySelectorAll('input[data-price]');
       let total = 0;
@@ -136,6 +158,8 @@
       document.getElementById('total').textContent =
         'Total: $' + total.toFixed(2);
     }
+
+    loadMenu();
   </script>
 
 </body>
